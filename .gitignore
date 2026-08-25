@@ -1,0 +1,57 @@
+# ─────────────────────────────────────────────────────────────
+# Secretos
+# ─────────────────────────────────────────────────────────────
+.env
+.env.local
+*.key
+
+# ─────────────────────────────────────────────────────────────
+# Datos reales de Quick — NO se republican en este repo.
+# El dataset original lo publicó el organizador (ver README).
+# ─────────────────────────────────────────────────────────────
+MAYO-JUNIO-JULIO 2026.csv/
+Nomina/
+*.csv
+*.xlsx
+*.docx
+
+# Datos derivados del ETL (se regeneran con analista/etl.py)
+agente/datos/
+*.parquet
+
+# ─────────────────────────────────────────────────────────────
+# Material del organizador / del caso (no es obra propia)
+# ─────────────────────────────────────────────────────────────
+reglas formales del proyecto.png
+
+# ─────────────────────────────────────────────────────────────
+# Documentos de trabajo internos (contexto entre chats)
+# ─────────────────────────────────────────────────────────────
+Contexto chat y hakaton/
+
+# ─────────────────────────────────────────────────────────────
+# Entregas empaquetadas (el contenido vive en agente/bench/)
+# ─────────────────────────────────────────────────────────────
+agente/submissions/
+*.zip
+
+# ─────────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+
+# ─────────────────────────────────────────────────────────────
+# Node
+# ─────────────────────────────────────────────────────────────
+node_modules/
+
+# ─────────────────────────────────────────────────────────────
+# Logs y temporales
+# ─────────────────────────────────────────────────────────────
+*.log
+.DS_Store
+Thumbs.db

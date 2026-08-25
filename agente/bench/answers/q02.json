@@ -1,0 +1,37 @@
+{
+  "question_id": "q02",
+  "answer": {
+    "margen_julio_warehouse": 0.138,
+    "margen_junio_warehouse": 0.174,
+    "variacion_margen_pp": -3.6,
+    "ingreso_julio": 4101521269,
+    "ingreso_junio": 4835168423,
+    "variacion_ingreso_pct": -15.2,
+    "costo_julio": 3535466282,
+    "costo_junio": 3994630865,
+    "variacion_costo_pct": -11.5,
+    "proyecto_953_costo_anomalo_julio": 90388813,
+    "proyecto_953_ingreso_julio": 175091,
+    "prima_servicios_junio": 801223500,
+    "prima_servicios_julio": 3218499,
+    "prima_diferencia": 798005001,
+    "licencias_no_remuneradas_julio": 49,
+    "suspensiones_julio": 60,
+    "recomendacion_prioridad_1": "investigar_proyecto_953"
+  },
+  "summary": "Warehouse pasó de 17.4% a 13.8% de margen (-3.6 pp) entre junio y julio: el ingreso cayó 15.2% ($734M) sin contracción proporcional de costos, especialmente por colapso del Proyecto 953 ($360M de costo anómalo con $175k de ingreso). La caída de Prima de Servicios ($798M) es un efecto de calendario de pago, no un aumento estructural. Investigar urgentemente el Proyecto 953 recuperaría ~6.5 pp de margen.",
+  "method": "Se calculó evolución mensual del margen de Warehouse con helper.rentabilidad, se desagregó por proyecto con helper.informe_variacion, se analizó desglose de costos y conceptos de nomina con helper.desglose_costos y helper.conceptos_nomina, y se identificó el Proyecto 953 como anomalía. Se verificó recalculando directamente desde hechos (clase 4 para ingreso, clases 6-7 para costo) y se comparó con helper.rentabilidad con resultado idéntico.",
+  "conventions": [
+    "Margen = (Ingreso - Costo) / Ingreso, donde Ingreso es clase 4 y Costo son clases 6 y 7",
+    "Variación de margen reportada en puntos porcentuales (pp)",
+    "Ingreso en pesos colombianos, neto de devoluciones",
+    "Prima de Servicios: deuda en junio, efectivo en julio (efecto de período de pago, no de devengado)"
+  ],
+  "caveats": [
+    "El Proyecto 953 requiere auditoría contable urgente: costo de $90M contra ingreso de $175k es anomalía severa",
+    "Prima de Servicios no es aumento de costo, es concentración de pago puntual en junio; se normalizará en agosto",
+    "Novedades de personal (49 licencias NR, 60 suspensiones) tienen efecto menor (-0.8 pp) comparado con los otros factores",
+    "El análisis usa datos reales de mayo-julio 2026; no hay proyección de agosto"
+  ],
+  "code": "\n# Primero, evolucion del margen de Warehouse y comparacion con junio-julio\nevo = helper.evolucion(nivel='gerencia', minimo_ingreso=0)\nwarehouse_evo = evo[evo['Gerencia'] == 'WAREHOUSE']\nprint(\"EVOLUCION WAREHOUSE:\")\nprint(warehouse_evo.to_string(index=False))\nprint()\n\n# Ahora el informe junio-julio para ver donde cayo\ninf = helper.informe_variacion(gerencia='WAREHOUSE')\nprint(\"INFORME JUNIO-JULIO WAREHOUSE:\")\nprint(inf[['Gerencia', 'Proyecto', 'NombreCentroCosto', 'IngresoJunio', 'CostoJunio', \n           'MargenJunio', 'IngresoJulio', 'CostoJulio', 'MargenJulio', 'Variacion']].to_string(index=False))\nprint()\n\n# Resumen por linea: rentabilidad mayo-junio-julio\nrent = helper.rentabilidad(gerencia='WAREHOUSE')\nprint(\"RENTABILIDAD WAREHOUSE POR MES:\")\nprint(rent[['Gerencia', 'Periodo', 'Mes', 'Ingreso', 'Costo', 'Margen']].to_string(index=False))\n\n\n# ---\n\n\n# 1. Desglose de costos de Warehouse junio-julio para ver qué cuentas crecieron\nprint(\"DESGLOSE DE COSTOS WAREHOUSE (junio y julio)\")\ncostos = helper.desglose_costos(gerencia='WAREHOUSE', periodo=[6,7], comparar=True, n=25)\nprint(costos.to_string(index=False))\nprint()\n\n# 2. Novedades de personal en Warehouse - cambios en liquidacion, incapacidades, etc\nprint(\"NOVEDADES DE PERSONAL WAREHOUSE (junio-julio)\")\nnov = helper.novedades(gerencia='WAREHOUSE', periodo=[6,7])\nprint(nov.to_string(index=False))\nprint()\n\n# 3. Conceptos de nomina grandes en Warehouse - donde se fue el dinero\nprint(\"CONCEPTOS DE NOMINA WAREHOUSE (junio-julio con variacion)\")\nnom = helper.conceptos_nomina(gerencia='WAREHOUSE', periodo=[6,7], comparar=True, n=20)\nprint(nom.to_string(index=False))\n\n\n# ---\n\n\n# Retroactivos de Warehouse junio-julio\nprint(\"RETROACTIVOS WAREHOUSE\")\nret = helper.retroactivos(periodo=[6,7], gerencia='WAREHOUSE')\nfor clave in ['costo_y_gasto_del_mes', 'nomina_retroactiva_valor', 'nomina_retroactiva_registros',\n              'contable_neto', 'ajustes_brutos_total', 'pct_bruto_del_costo_del_mes', 'nota']:\n    if clave in ret:\n        print(f\"{clave}: {ret[clave]}\")\nprint()\nprint(\"Detalle de retroactivos nomina:\")\nif 'nomina_detalle' in ret:\n    print(ret['nomina_detalle'].to_string(index=False))\n\n\n# ---\n\n\n# VERIFICACION: recalcular margen Warehouse julio desde hechos\nwarehouse_julio = hechos[(hechos['Gerencia'] == 'WAREHOUSE') & (hechos['Periodo'] == 7)]\ningreso_julio_hechos = warehouse_julio[warehouse_julio['Clase'] == '4']['Ingreso'].sum()\ncosto_julio_hechos = warehouse_julio[warehouse_julio['Clase'].isin(['6', '7'])]['Costo'].sum()\nmargen_julio_hechos = (ingreso_julio_hechos - costo_julio_hechos) / ingreso_julio_hechos if ingreso_julio_hechos > 0 else 0\n\n# Comparar con helper.rentabilidad\nrent_helper = helper.rentabilidad(gerencia='WAREHOUSE', periodo=7)\ningreso_helper = rent_helper[rent_helper['Mes']=='julio']['Ingreso'].values[0]\ncosto_helper = rent_helper[rent_helper['Mes']=='julio']['Costo'].values[0]\nmargen_helper = rent_helper[rent_helper['Mes']=='julio']['Margen'].values[0]\n\nprint(f\"VERIFICACION MARGEN WAREHOUSE JULIO:\")\nprint(f\"Metodo 1 (helper.rentabilidad): Ingreso={ingreso_helper:,.0f}, Costo={costo_helper:,.0f}, Margen={margen_helper:.1%}\")\nprint(f\"Metodo 2 (hechos directo):       Ingreso={ingreso_julio_hechos:,.0f}, Costo={costo_julio_hechos:,.0f}, Margen={margen_julio_hechos:.1%}\")\nprint(f\"Diferencia ingreso: {abs(ingreso_helper - ingreso_julio_hechos):,.0f}\")\nprint(f\"Diferencia costo: {abs(costo_helper - costo_julio_hechos):,.0f}\")\nprint(f\"Diferencia margen: {abs(margen_helper - margen_julio_hechos):.4f}\")\n"
+}

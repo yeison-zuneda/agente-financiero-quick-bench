@@ -1,0 +1,35 @@
+{
+  "question_id": "q07",
+  "answer": {
+    "variacion_margen_pp": -3.8,
+    "margen_junio": 0.176,
+    "margen_julio": 0.138,
+    "ingreso_junio": 147138341.06,
+    "ingreso_julio": 138420313,
+    "variacion_ingreso": -8718028.06,
+    "costo_junio": 121228067,
+    "costo_julio": 119370619.45,
+    "aumento_rodamiento_adicional": 3699268,
+    "aumento_correos_transportes": 2253928,
+    "causas_principales": [
+      "Caída de ingresos: -$8.7M (-5.9%)",
+      "Aumento de rodamiento adicional: +$3.7M",
+      "Aumento de correos y transportes: +$2.3M",
+      "Novedades de personal (incapacidades y licencias) contribuyeron a menor presión salarial pero insuficiente"
+    ]
+  },
+  "summary": "El margen del proyecto 600 cayó 3.8 pp entre junio y julio por caída de ingresos (-$8.7M) combinada con aumentos significativos en costos de logística (rodamiento +$3.7M, transportes +$2.3M). Las novedades de personal (más incapacidades y licencias no remuneradas en julio) moderaron el costo salarial pero no compensan.",
+  "method": "Se calculó la variación de margen usando helper.informe_variacion para el proyecto 600, luego se desagregaron las novedades de personal con helper.novedades y el desglose de costos con helper.desglose_costos. Se verificó el margen recalculando desde hechos brutos: junio 17.61%, julio 13.76%, diferencia -3.85 pp (coincide con -3.8 pp reportado).",
+  "conventions": [
+    "Margen = (Ingreso - Costo) / Ingreso",
+    "Costo incluye clases 6 (costo de mercancía) y 7 (costos de proyecto)",
+    "Novedades de personal son las causadas en junio y julio, sin importar fecha de pago",
+    "Ingreso neto ya incluye devoluciones y notas crédito según convenio de signo de hechos"
+  ],
+  "caveats": [
+    "La prima de servicios mostró una caída masiva (-$31.8M) en junio-julio, pero es un efecto calendario de liquidación semestral, no operacional",
+    "Las novedades de personal están registradas pero la magnitud exacta del impacto en costo se ve en la nómina conceptualizada (prima, horas extras, sueldos)",
+    "El proyecto 600 es LAST MILE COLOMBIA; los datos son de mayo-julio 2026, sin proyección a agosto"
+  ],
+  "code": "\n# Primero: variación de rentabilidad del proyecto 600 junio vs julio\nvariacion = helper.informe_variacion(proyecto='600')\nprint(\"VARIACION RENTABILIDAD PROYECTO 600 - JUNIO vs JULIO\")\nprint(variacion.to_string(index=False))\nprint()\n\n# Segundo: novedades en el proyecto 600\nnovedades_600 = helper.novedades(proyecto='600', periodo=[6, 7])\nprint(\"\\nNOVEDADES PROYECTO 600 - JUNIO y JULIO\")\nprint(novedades_600.to_string(index=False))\n\n\n# ---\n\n\n# Desglose de costos del proyecto 600 comparando junio vs julio\ncostos_600 = helper.desglose_costos(proyecto='600', periodo=[6, 7], comparar=True, n=15)\nprint(\"DESGLOSE DE COSTOS PROYECTO 600 - JUNIO vs JULIO\")\nprint(costos_600.to_string(index=False))\nprint()\n\n# Conceptos de nómina para ver si hay algo anormal en la remuneración\nnomina_600 = helper.conceptos_nomina(proyecto='600', periodo=[6, 7], comparar=True, n=20)\nprint(\"\\nCONCEPTOS DE NOMINA PROYECTO 600 - JUNIO vs JULIO\")\nprint(nomina_600.to_string(index=False))\n\n\n# ---\n\n\n# VERIFICACION: recalcular el margen de junio y julio para el proyecto 600 desde hechos\nfiltro_600_junio = hechos[(hechos['Proyecto'] == '600') & (hechos['Periodo'] == 6)]\nfiltro_600_julio = hechos[(hechos['Proyecto'] == '600') & (hechos['Periodo'] == 7)]\n\ningreso_junio = filtro_600_junio['Ingreso'].sum()\ncosto_junio = filtro_600_junio['Costo'].sum()\nmargen_junio = (ingreso_junio - costo_junio) / ingreso_junio if ingreso_junio != 0 else 0\n\ningreso_julio = filtro_600_julio['Ingreso'].sum()\ncosto_julio = filtro_600_julio['Costo'].sum()\nmargen_julio = (ingreso_julio - costo_julio) / ingreso_julio if ingreso_julio != 0 else 0\n\nvariacion_margen = margen_julio - margen_junio\n\nprint(\"VERIFICACION - CALCULO DIRECTO DESDE HECHOS\")\nprint(f\"Junio:   Ingreso=${ingreso_junio:,.2f} | Costo=${costo_junio:,.2f} | Margen={margen_junio:.2%}\")\nprint(f\"Julio:   Ingreso=${ingreso_julio:,.2f} | Costo=${costo_julio:,.2f} | Margen={margen_julio:.2%}\")\nprint(f\"Variación de margen: {variacion_margen:.2%} ({variacion_margen*100:.1f} pp)\")\nprint()\n\n# Comparar con informe_variacion\nprint(\"METODO 2 - helper.informe_variacion\")\nprint(f\"Junio:   Ingreso=$147,138,341.06 | Costo=$121,228,067.00 | Margen=18.0%\")\nprint(f\"Julio:   Ingreso=$138,420,313.00 | Costo=$119,370,619.45 | Margen=14.0%\")\nprint(f\"Variación de margen: -4.0 pp\")\nprint()\nprint(f\"DIFERENCIA EN CIFRAS: Metodo 1 margen_junio={margen_junio*100:.1f}%, Metodo 2={18.0}% | Metodo 1 margen_julio={margen_julio*100:.1f}%, Metodo 2={14.0}%\")\n"
+}

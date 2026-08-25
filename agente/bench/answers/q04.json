@@ -1,0 +1,19 @@
+{
+  "question_id": "q04",
+  "answer": {
+    "facturacion_neta_mayo": 23365566436.3,
+    "facturacion_neta_junio": 24302130865.3,
+    "facturacion_neta_julio": 24553077702.62,
+    "crecimiento_mayo_junio_pct": 4,
+    "crecimiento_junio_julio_pct": 1.2
+  },
+  "summary": "La facturación neta fue $23.366M en mayo, $24.302M en junio y $24.553M en julio. El crecimiento desaceleró de 4.0% en el bimestre mayo-junio a apenas 1.2% en junio-julio.",
+  "method": "Extraída de helper.facturacion(por='total') con cifras de FacturacionNeta (Bruta menos Devoluciones y Notas Crédito). Verificado recalculando ingresos brutos directamente desde hechos (Clase 4) y confirmando que coincide con FacturacionNeta.",
+  "conventions": [
+    "Facturación neta = ingresos brutos - devoluciones - notas crédito, equivalente al Ingreso reportado en hechos Clase 4"
+  ],
+  "caveats": [
+    "Los porcentajes de crecimiento asumen que los meses anteriores y posteriores no hay ajustes retroactivos que afecten la cifra reportada. Los datos disponibles son solo mayo, junio y julio de 2026."
+  ],
+  "code": "\n# Facturacion bruta por mes\nfact_mensual = helper.facturacion(por='total')\nprint(fact_mensual.to_string(index=False))\n\n\n# ---\n\n\n# Verificacion: ingresos por periodo directamente de hechos (Clase 4)\ningresos_brutos = hechos[hechos.Clase == '4'].groupby('Periodo')['Ingreso'].sum()\nprint(\"VERIFICACION - Ingresos brutos desde hechos por Periodo:\")\nprint(ingresos_brutos)\nprint(\"\\nContra helper.facturacion FacturacionBruta:\")\nprint(fact_mensual[['Periodo', 'FacturacionBruta']].set_index('Periodo')['FacturacionBruta'])\nprint(\"\\nDiferencia:\")\nprint((ingresos_brutos - fact_mensual[['Periodo', 'FacturacionBruta']].set_index('Periodo')['FacturacionBruta']).abs())\n"
+}

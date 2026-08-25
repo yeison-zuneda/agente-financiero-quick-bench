@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analista Financiero Agéntico — Quick Logística</title>
+<style>
+  :root{
+    --fondo:#0f1216; --panel:#161a21; --panel2:#1c222b; --borde:#2a323d;
+    --texto:#e6eaf0; --tenue:#98a2b3; --mute:#898781; --acento:#e8674f;
+    --grid:#2c2c2a; --base:#383835; --code:#0b0e12;
+    /* categorico validado en superficie #161a21 (5/5 PASS, modo oscuro) */
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    /* estado: el semaforo que pide el caso. Siempre con icono + etiqueta. */
+    --bien:#0ca30c; --ojo:#fab219; --mal:#d03b3b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--fondo);color:var(--texto);height:100vh;overflow:hidden;font-variant-numeric:tabular-nums}
+  .app{display:grid;grid-template-columns:minmax(360px,38%) 1fr;height:100vh}
+  @media(max-width:1180px){.app{grid-template-columns:1fr}.izquierda{display:none}}
+
+  header{padding:12px 18px;border-bottom:1px solid var(--borde);display:flex;align-items:center;gap:12px;flex-shrink:0}
+  header h1{margin:0;font-size:14px;font-weight:600}
+  header .sub{color:var(--tenue);font-size:11.5px}
+  .pill{margin-left:auto;font-size:11px;color:var(--tenue);background:var(--panel2);border:1px solid var(--borde);padding:3px 9px;border-radius:20px;font-family:ui-monospace,Consolas,monospace}
+
+  /* ---------------- chat ---------------- */
+  .izquierda{display:flex;flex-direction:column;height:100vh;border-right:1px solid var(--borde);min-width:0}
+  #chat{flex:1;overflow-y:auto;padding:18px}
+  .msg{margin-bottom:20px}
+  .msg.yo{margin-left:auto;background:var(--panel2);border:1px solid var(--borde);border-radius:12px 12px 2px 12px;padding:9px 13px;width:fit-content;max-width:85%}
+  .quien{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--tenue);margin-bottom:5px}
+  .cuerpo :first-child{margin-top:0}.cuerpo :last-child{margin-bottom:0}
+  .cuerpo h3{font-size:13.5px;margin:14px 0 5px}
+  .cuerpo table{border-collapse:collapse;margin:10px 0;font-size:12px;display:block;overflow-x:auto}
+  .cuerpo th,.cuerpo td{border:1px solid var(--borde);padding:4px 8px;text-align:left;white-space:nowrap}
+  .cuerpo th{background:var(--panel2)}
+  .cuerpo code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
+  .cuerpo ul,.cuerpo ol{padding-left:19px;margin:7px 0}
+  details.paso{margin:7px 0;border:1px solid var(--borde);border-radius:8px;background:var(--panel);overflow:hidden}
+  details.paso summary{cursor:pointer;padding:6px 11px;font-size:11.5px;color:var(--tenue);display:flex;gap:7px;align-items:center}
+  details.paso summary::marker{content:""}
+  details.paso pre{margin:0;padding:10px 12px;background:var(--code);overflow-x:auto;font:11.5px/1.5 ui-monospace,Consolas,monospace;border-top:1px solid var(--borde)}
+  .num{background:var(--panel2);border-radius:4px;padding:0 6px;font-family:ui-monospace,monospace;font-size:10.5px}
+  .fallo{color:var(--mal)}
+  .meta{font-size:10.5px;color:var(--tenue);margin-top:9px;display:flex;gap:13px;flex-wrap:wrap;font-family:ui-monospace,Consolas,monospace}
+  .meta b{color:var(--bien);font-weight:600}
+  .pensando{color:var(--tenue);font-style:italic;font-size:12.5px;margin:5px 0}
+  .puntos::after{content:"";animation:p 1.2s steps(4,end) infinite}
+  @keyframes p{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+  form{display:flex;gap:9px;padding:12px 18px;border-top:1px solid var(--borde);background:var(--panel);flex-shrink:0}
+  textarea{flex:1;background:var(--panel2);border:1px solid var(--borde);color:var(--texto);border-radius:9px;padding:9px 12px;font:13.5px/1.5 inherit;resize:none;max-height:120px;outline:none}
+  textarea:focus{border-color:var(--acento)}
+  button{background:var(--acento);color:#fff;border:0;border-radius:9px;padding:0 18px;font-weight:600;cursor:pointer;font-size:13.5px}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .sugerencias{padding:0 18px 11px;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+  .sug{font-size:11px;color:var(--tenue);background:var(--panel2);border:1px solid var(--borde);border-radius:14px;padding:4px 10px;cursor:pointer}
+  .sug:hover{border-color:var(--acento);color:var(--texto)}
+
+  /* ---------------- panel derecho ---------------- */
+  .derecha{display:flex;flex-direction:column;height:100vh;min-width:0;background:var(--panel)}
+  .tabs{display:flex;gap:2px;margin-left:auto}
+  .tab{background:none;color:var(--tenue);border:1px solid transparent;border-radius:7px;padding:5px 13px;font-size:12.5px;font-weight:500}
+  .tab[aria-selected="true"]{background:var(--panel2);border-color:var(--borde);color:var(--texto)}
+  .vista{flex:1;overflow-y:auto;display:none}
+  .vista[data-activa]{display:block}
+
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:11px;padding:16px 18px 4px}
+  .kpi{background:var(--panel2);border:1px solid var(--borde);border-radius:11px;padding:12px 14px}
+  .kpi .et{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute);margin-bottom:7px}
+  .kpi .val{font-size:25px;font-weight:600;line-height:1.1;letter-spacing:-.5px}
+  .kpi .del{font-size:11.5px;margin-top:5px;color:var(--tenue);display:flex;align-items:center;gap:5px}
+  .up{color:var(--bien)}.down{color:var(--mal)}.flat{color:var(--ojo)}
+
+  .tarjeta{margin:16px 18px;background:var(--panel2);border:1px solid var(--borde);border-radius:11px;padding:14px 16px}
+  .tarjeta > h2{margin:0 0 2px;font-size:13.5px;font-weight:600}
+  .tarjeta > .nota{margin:0 0 12px;font-size:11.5px;color:var(--tenue)}
+  .leyenda{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 10px;font-size:11.5px;color:var(--tenue)}
+  .leyenda span{display:flex;align-items:center;gap:6px}
+  .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+  svg{display:block;width:100%;overflow:visible}
+  .eje{fill:var(--mute);font-size:10.5px}
+  .rot{fill:var(--texto);font-size:11px;font-weight:600}
+  .gl{stroke:var(--grid);stroke-width:1}
+  .bl{stroke:var(--base);stroke-width:1}
+
+  /* comparador */
+  .selector{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .selector select,.selector input{background:var(--panel);border:1px solid var(--borde);color:var(--texto);border-radius:7px;padding:6px 10px;font:12.5px inherit;outline:none}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--borde);border-radius:14px;padding:3px 6px 3px 10px;font-size:11.5px}
+  .chip b{font-weight:600}
+  .chip button{background:none;border:0;color:var(--tenue);cursor:pointer;padding:0 4px;font-size:14px;line-height:1}
+  .vacio{color:var(--tenue);font-size:12.5px;padding:14px 0}
+
+  /* tabla detalle */
+  .filtros{padding:12px 18px;display:flex;gap:8px;align-items:center;position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--borde);z-index:2}
+  .filtros select,.filtros input{background:var(--panel2);border:1px solid var(--borde);color:var(--texto);border-radius:7px;padding:6px 10px;font:12.5px inherit;outline:none}
+  .filtros input{flex:1;min-width:0}
+  .conteo{font-size:11px;color:var(--tenue);font-family:ui-monospace,monospace;white-space:nowrap}
+  table.det{border-collapse:collapse;width:100%;font-size:12px}
+  table.det th{position:sticky;top:47px;background:var(--panel2);border-bottom:1px solid var(--borde);padding:7px 9px;text-align:right;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mute);white-space:nowrap;z-index:1;cursor:pointer;user-select:none}
+  table.det th:first-child,table.det th:nth-child(2),table.det th:nth-child(3){text-align:left}
+  table.det th:hover{color:var(--texto)}
+  table.det td{border-bottom:1px solid #20262f;padding:6px 9px;text-align:right;white-space:nowrap}
+  table.det td:first-child,table.det td:nth-child(2),table.det td:nth-child(3){text-align:left}
+  table.det tbody tr:hover{background:#1b212a}
+  table.det input[type=checkbox]{accent-color:var(--acento);cursor:pointer}
+  .obs{display:inline-flex;align-items:center;gap:5px;font-size:11px}
+
+  /* respuestas del caso */
+  .qa{margin:16px 18px;background:var(--panel2);border:1px solid var(--borde);border-radius:11px;overflow:hidden}
+  .qa > .preg{display:flex;gap:11px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--borde)}
+  .qa .idx{background:var(--acento);color:#fff;border-radius:6px;min-width:23px;height:23px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .qa .preg h3{margin:0;font-size:13.5px;font-weight:600;line-height:1.45}
+  .qa .resp{padding:14px 16px 4px 50px}
+  .qa .resp :first-child{margin-top:0}
+  .qa .resp h3{font-size:13px;margin:14px 0 5px}
+  .qa .resp table{border-collapse:collapse;margin:11px 0;font-size:12px;display:block;overflow-x:auto}
+  .qa .resp th,.qa .resp td{border:1px solid var(--borde);padding:5px 9px;text-align:left;white-space:nowrap}
+  .qa .resp th{background:var(--panel)}
+  .qa .resp code{background:var(--panel);padding:1px 5px;border-radius:4px;font-size:12px}
+  .qa .resp ul,.qa .resp ol{padding-left:19px;margin:8px 0}
+  .qa .resp li{margin:3px 0}
+  .qa .pie{padding:0 16px 13px 50px;display:flex;gap:13px;flex-wrap:wrap;font-size:10.5px;color:var(--tenue);font-family:ui-monospace,Consolas,monospace;align-items:center}
+  .qa .pie b{color:var(--bien);font-weight:600}
+  .qa details{margin:0 16px 13px 50px;border:1px solid var(--borde);border-radius:8px;background:var(--panel);overflow:hidden}
+  .qa details summary{cursor:pointer;padding:6px 11px;font-size:11.5px;color:var(--tenue)}
+  .qa details summary::marker{content:""}
+  .qa details summary:hover{color:var(--texto)}
+  .qa details pre{margin:0;padding:10px 12px;background:var(--code);overflow-x:auto;font:11.5px/1.5 ui-monospace,Consolas,monospace;border-top:1px solid var(--borde)}
+  .avisoAmar{color:var(--ojo)}
+
+  #tip{position:fixed;pointer-events:none;background:#0b0e12;border:1px solid var(--borde);border-radius:7px;padding:7px 10px;font-size:11.5px;line-height:1.5;opacity:0;transition:opacity .1s;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.5);white-space:nowrap}
+  #tip b{font-weight:600}
+</style>
+</head>
+<body>
+<div id="tip"></div>
+<div class="app">
+
+  <!-- ============ CHAT ============ -->
+  <section class="izquierda">
+    <header>
+      <div>
+        <h1>Analista Financiero Agéntico</h1>
+        <div class="sub">Quick Logística · 255.859 asientos · may–jul 2026</div>
+      </div>
+      <span class="pill" id="pill">local</span>
+    </header>
+    <div id="chat">
+      <div class="msg"><div class="quien">Analista</div><div class="cuerpo">
+        <p>Tengo el contable de mayo a julio de 2026 (468 proyectos, 7 gerencias), la nómina
+        de los tres meses y las novedades de personal.</p>
+        <p>Pregúntame lo que quieras: calculo sobre los datos reales y te muestro el código
+        que ejecuté y lo que costó la respuesta.</p>
+      </div></div>
+    </div>
+    <div class="sugerencias" id="sugerencias"></div>
+    <form id="form">
+      <textarea id="entrada" rows="1" placeholder="¿Qué línea tuvo la mejor evolución en rentabilidad y a qué se debe?"></textarea>
+      <button id="enviar">Preguntar</button>
+    </form>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <aside class="derecha">
+    <header>
+      <div>
+        <h1 id="tituloVista">Rentabilidad por proyecto</h1>
+        <div class="sub" id="subVista">Junio vs julio 2026</div>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-vista="dash">Dashboard</button>
+        <button class="tab" role="tab" aria-selected="false" data-vista="resp">Las 7 preguntas</button>
+        <button class="tab" role="tab" aria-selected="false" data-vista="det">Detalle</button>
+      </div>
+    </header>
+
+    <div class="vista" data-vista="dash" data-activa>
+      <div class="kpis" id="kpis"></div>
+
+      <div class="tarjeta">
+        <h2>Evolución del margen por gerencia</h2>
+        <p class="nota">Margen = (Ingreso − Costo) / Ingreso. Costo = cuentas clase 6 y 7.
+           Se excluyen <b>GERENCIAS</b> (sin ingreso operativo), <b>GLOBAL COLOMBIA</b> y
+           <b>COURIER</b> (≈$5 M/mes: su margen salta 37 pp sobre una base inmaterial).</p>
+        <div class="leyenda" id="leyendaGer"></div>
+        <div id="chartGer"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Proyectos con mayor variación de margen · junio → julio</h2>
+        <p class="nota" id="notaVar"></p>
+        <div class="leyenda">
+          <span><i class="sw" style="background:var(--bien)"></i>🟢 Aumenta</span>
+          <span><i class="sw" style="background:var(--mal)"></i>🔴 Disminuye</span>
+        </div>
+        <div id="chartVar"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Comparador de proyectos</h2>
+        <p class="nota">Elige proyectos para verlos lado a lado. Cada línea va del margen de
+           junio (○) al de julio (●). También puedes marcarlos desde la pestaña Detalle.</p>
+        <div class="selector">
+          <select id="selGer"><option value="">Todas las gerencias</option></select>
+          <input id="selBuscar" list="listaProy" placeholder="Escribe un número de proyecto y Enter…">
+          <datalist id="listaProy"></datalist>
+          <button type="button" id="btnTop" style="background:var(--panel);border:1px solid var(--borde);color:var(--tenue);font-weight:500;padding:6px 12px;font-size:12.5px">Cargar los 5 que más cayeron</button>
+        </div>
+        <div class="chips" id="chips"></div>
+        <div id="chartCmp"></div>
+      </div>
+    </div>
+
+    <div class="vista" data-vista="resp">
+      <div class="kpis" id="kpisResp"></div>
+      <div id="listaResp"></div>
+    </div>
+
+    <div class="vista" data-vista="det">
+      <div class="filtros">
+        <select id="fGerencia"><option value="">Todas las gerencias</option></select>
+        <input id="fBuscar" placeholder="Buscar proyecto…">
+        <select id="fObs">
+          <option value="">Todo el semáforo</option>
+          <option value="Aumenta">🟢 Aumenta</option>
+          <option value="Disminuye">🔴 Disminuye</option>
+          <option value="Se mantiene">🟡 Se mantiene</option>
+        </select>
+        <span class="conteo" id="conteo"></span>
+      </div>
+      <table class="det">
+        <thead><tr>
+          <th style="cursor:default"></th>
+          <th data-orden="Gerencia">Gerencia</th>
+          <th data-orden="NombreCentroCosto">Proyecto</th>
+          <th data-orden="IngresoJunio">Ing. junio</th>
+          <th data-orden="CostoJunio">Costo junio</th>
+          <th data-orden="MargenJunio">% jun</th>
+          <th data-orden="IngresoJulio">Ing. julio</th>
+          <th data-orden="CostoJulio">Costo julio</th>
+          <th data-orden="MargenJulio">% jul</th>
+          <th data-orden="Variacion">Variación</th>
+          <th data-orden="VariacionIngreso">Δ Ingreso</th>
+          <th data-orden="Utilidad">Utilidad</th>
+          <th data-orden="Observacion">Obs.</th>
+        </tr></thead>
+        <tbody id="cuerpoTabla"></tbody>
+      </table>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const NS = "http://www.w3.org/2000/svg";
+
+const PESOS = n => n == null || isNaN(n) ? "—" : "$" + Math.round(n).toLocaleString("es-CO");
+const CORTO = n => {
+  if (n == null || isNaN(n)) return "—";
+  const a = Math.abs(n), s = n < 0 ? "−" : "";
+  if (a >= 1e9) return s + "$" + (a/1e9).toFixed(a/1e9 >= 10 ? 1 : 2) + " mM";
+  if (a >= 1e6) return s + "$" + (a/1e6).toFixed(a/1e6 >= 10 ? 0 : 1) + " M";
+  if (a >= 1e3) return s + "$" + (a/1e3).toFixed(0) + " k";
+  return s + "$" + Math.round(a);
+};
+const PCT = f => f == null || isNaN(f) ? "—" : (f*100).toFixed(1) + "%";
+const PP  = f => f == null || isNaN(f) ? "—" : (f >= 0 ? "+" : "−") + Math.abs(f*100).toFixed(1) + " pp";
+
+/* Color por ENTIDAD, fijo — nunca por posición en un ranking. */
+const COLOR_GER = {
+  "LAST MILE COLOMBIA": "var(--s1)", "FIRST MILE": "var(--s2)",
+  "LONG HAUL": "var(--s3)", "WAREHOUSE": "var(--s4)", "COURIER COLOMBIA": "var(--s5)",
+};
+const OPERATIVAS = ["LAST MILE COLOMBIA","FIRST MILE","LONG HAUL","WAREHOUSE"];
+const ICONO = {Aumenta:"🟢", Disminuye:"🔴", "Se mantiene":"🟡", "No determinable":"⚪"};
+const TINTA  = {Aumenta:"var(--bien)", Disminuye:"var(--mal)", "Se mantiene":"var(--ojo)"};
+
+let INFORME = [], SERIES = null, SEL = [];
+
+/* ---------- tooltip ---------- */
+const tip = $("#tip");
+function conTip(el, html){
+  el.addEventListener("mousemove", e => {
+    tip.innerHTML = html;
+    tip.style.opacity = 1;
+    const r = tip.getBoundingClientRect();
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - r.width - 10) + "px";
+    tip.style.top  = Math.max(e.clientY - r.height - 12, 8) + "px";
+  });
+  el.addEventListener("mouseleave", () => tip.style.opacity = 0);
+}
+const el = (t, a = {}) => { const n = document.createElementNS(NS, t);
+  for (const k in a) n.setAttribute(k, a[k]); return n; };
+
+/* ============ KPIs ============ */
+function pintarKpis(){
+  const t = SERIES.totales, jul = t.at(-1), jun = t.at(-2);
+  const filas = [
+    {et:"Facturación julio", val:CORTO(jul.ingreso), d:jul.ingreso-jun.ingreso, tipo:"pesos"},
+    {et:"Costo julio",       val:CORTO(jul.costo),   d:jul.costo-jun.costo,     tipo:"pesos", invertir:true},
+    {et:"Utilidad julio",    val:CORTO(jul.utilidad),d:jul.utilidad-jun.utilidad,tipo:"pesos"},
+    {et:"Margen julio",      val:PCT(jul.margen),    d:jul.margen-jun.margen,   tipo:"pp"},
+  ];
+  $("#kpis").innerHTML = filas.map(f => {
+    const bueno = f.invertir ? f.d < 0 : f.d > 0;
+    const cls = Math.abs(f.d) < 1e-9 ? "flat" : (bueno ? "up" : "down");
+    const flecha = f.d > 0 ? "▲" : f.d < 0 ? "▼" : "▬";
+    const dtxt = f.tipo === "pp" ? PP(f.d) : (f.d >= 0 ? "+" : "−") + CORTO(Math.abs(f.d)).replace("−","");
+    return `<div class="kpi"><div class="et">${f.et}</div>
+      <div class="val">${f.val}</div>
+      <div class="del"><span class="${cls}">${flecha} ${dtxt}</span> vs junio</div></div>`;
+  }).join("");
+}
+
+/* ============ líneas: margen por gerencia ============ */
+function pintarGerencias(){
+  const gs = OPERATIVAS.filter(g => SERIES.gerencias[g]);
+  const W = 720, H = 260, ML = 46, MR = 132, MT = 14, MB = 30;
+  const meses = ["mayo","junio","julio"];
+  const todos = gs.flatMap(g => SERIES.gerencias[g].map(m => m.margen)).filter(v => v != null);
+  const lo = Math.min(...todos), hi = Math.max(...todos);
+  const pad = (hi - lo) * 0.25 || 0.02;
+  const y0 = lo - pad, y1 = hi + pad;
+  const X = i => ML + i * (W - ML - MR) / (meses.length - 1);
+  const Y = v => MT + (H - MT - MB) * (1 - (v - y0) / (y1 - y0));
+
+  const svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img",
+    "aria-label":"Margen mensual por gerencia, mayo a julio de 2026"});
+
+  // rejilla recesiva + eje y en %
+  const pasos = 4;
+  for (let i = 0; i <= pasos; i++){
+    const v = y0 + (y1 - y0) * i / pasos, y = Y(v);
+    svg.appendChild(el("line", {x1:ML, x2:W-MR, y1:y, y2:y, class:"gl"}));
+    const t = el("text", {x:ML-9, y:y+3.5, class:"eje", "text-anchor":"end"});
+    t.textContent = (v*100).toFixed(0) + "%"; svg.appendChild(t);
+  }
+  meses.forEach((m, i) => {
+    const t = el("text", {x:X(i), y:H-9, class:"eje", "text-anchor":"middle"});
+    t.textContent = m; svg.appendChild(t);
+  });
+  svg.appendChild(el("line", {x1:ML, x2:W-MR, y1:H-MB, y2:H-MB, class:"bl"}));
+
+  gs.forEach(g => {
+    const serie = SERIES.gerencias[g], col = COLOR_GER[g];
+    const pts = serie.map((m, i) => [X(i), Y(m.margen)]);
+    svg.appendChild(el("polyline", {points:pts.map(p=>p.join(",")).join(" "),
+      fill:"none", stroke:col, "stroke-width":2, "stroke-linejoin":"round", "stroke-linecap":"round"}));
+    // anillo de 2px del color de la superficie para que los marcadores no se fundan
+    pts.forEach(([x,y], i) => {
+      svg.appendChild(el("circle", {cx:x, cy:y, r:5.5, fill:"var(--panel2)"}));
+      const c = el("circle", {cx:x, cy:y, r:4, fill:col});
+      conTip(c, `<b>${g}</b><br>${serie[i].mes} · margen <b>${PCT(serie[i].margen)}</b><br>
+        ingreso ${CORTO(serie[i].ingreso)} · costo ${CORTO(serie[i].costo)}`);
+      svg.appendChild(c);
+    });
+    // etiqueta directa al final: la identidad no depende solo del color
+    const ult = pts.at(-1);
+    const lab = el("text", {x:ult[0]+11, y:ult[1]+4, class:"rot", fill:col});
+    lab.textContent = g === "LAST MILE COLOMBIA" ? "LAST MILE" : g;
+    svg.appendChild(lab);
+    const val = el("text", {x:ult[0]+11, y:ult[1]+18, class:"eje"});
+    val.textContent = PCT(serie.at(-1).margen);
+    svg.appendChild(val);
+  });
+  $("#chartGer").replaceChildren(svg);
+  $("#leyendaGer").innerHTML = gs.map(g =>
+    `<span><i class="sw" style="background:${COLOR_GER[g]}"></i>${g}</span>`).join("");
+}
+
+/* ============ barras divergentes: variación de margen ============ */
+function pintarVariacion(){
+  // Materialidad: sin un piso de ingreso, el ranking lo copan proyectos residuales
+  // (p.ej. uno con $175 k de ingreso y −515 pp de "variación").
+  const PISO = 3e8;
+  const aptos = INFORME.filter(r =>
+    r.Variacion != null && !isNaN(r.Variacion) &&
+    r.IngresoJunio > PISO && r.IngresoJulio > PISO);
+  const orden = [...aptos].sort((a,b) => b.Variacion - a.Variacion);
+  const filas = [...orden.slice(0,6), ...orden.slice(-6)]
+    .filter((v,i,a) => a.indexOf(v) === i).sort((a,b) => b.Variacion - a.Variacion);
+
+  $("#notaVar").innerHTML = `Solo proyectos con más de ${CORTO(PISO)} de ingreso en
+    <em>ambos</em> meses (${aptos.length} de ${INFORME.length}). Sin ese piso el ranking lo
+    copan proyectos residuales cuyo margen se dispara sobre bases mínimas.`;
+
+  const W = 720, ML = 168, MR = 62, FILA = 26, MT = 8;
+  const H = MT + filas.length * FILA + 24;
+  const max = Math.max(...filas.map(r => Math.abs(r.Variacion))) || 0.01;
+  const cx = ML + (W - ML - MR) / 2;
+  const semi = (W - ML - MR) / 2;
+  const X = v => cx + (v / max) * semi;
+
+  const svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img",
+    "aria-label":"Proyectos con mayor variación de margen entre junio y julio"});
+  svg.appendChild(el("line", {x1:cx, x2:cx, y1:MT, y2:H-24, class:"bl"}));
+
+  filas.forEach((r, i) => {
+    const y = MT + i * FILA, alto = 13, cy = y + FILA/2 - alto/2;
+    const col = r.Variacion >= 0 ? "var(--bien)" : "var(--mal)";
+    const x = r.Variacion >= 0 ? cx : X(r.Variacion);
+    const ancho = Math.max(Math.abs(X(r.Variacion) - cx), 1.5);
+    const b = el("rect", {x, y:cy, width:ancho, height:alto, fill:col, rx:4});
+    conTip(b, `<b>${r.NombreCentroCosto}</b> · ${r.Gerencia}<br>
+      junio ${PCT(r.MargenJunio)} → julio ${PCT(r.MargenJulio)} (<b>${PP(r.Variacion)}</b>)<br>
+      ingreso julio ${CORTO(r.IngresoJulio)} · utilidad ${CORTO(r.Utilidad)}`);
+    svg.appendChild(b);
+
+    const nom = el("text", {x:ML-12, y:y+FILA/2+4, class:"eje", "text-anchor":"end",
+      fill:"var(--texto)", style:"font-size:11.5px;cursor:pointer"});
+    nom.textContent = `${r.NombreCentroCosto} · ${r.Gerencia.split(" ")[0]}`;
+    nom.addEventListener("click", () => { agregar(r.Proyecto); irA("dash"); });
+    conTip(nom, "clic para comparar este proyecto");
+    svg.appendChild(nom);
+
+    // etiqueta directa: el icono + el número, nunca el color solo
+    const v = el("text", {y:y+FILA/2+4, class:"eje", fill:col, style:"font-weight:600"});
+    if (r.Variacion >= 0){ v.setAttribute("x", X(r.Variacion)+8); v.setAttribute("text-anchor","start"); }
+    else { v.setAttribute("x", X(r.Variacion)-8); v.setAttribute("text-anchor","end"); }
+    v.textContent = (r.Variacion >= 0 ? "🟢 " : "🔴 ") + PP(r.Variacion);
+    svg.appendChild(v);
+  });
+  const cap = el("text", {x:cx, y:H-6, class:"eje", "text-anchor":"middle"});
+  cap.textContent = "variación de margen (puntos porcentuales)";
+  svg.appendChild(cap);
+  $("#chartVar").replaceChildren(svg);
+}
+
+/* ============ comparador (dumbbell junio → julio) ============ */
+function agregar(p){ if(!SEL.includes(p) && SEL.length < 10){ SEL.push(p); pintarCmp(); } }
+function quitar(p){ SEL = SEL.filter(x => x !== p); pintarCmp(); pintarTabla(); }
+
+function pintarCmp(){
+  $("#chips").innerHTML = SEL.map(p => {
+    const d = SERIES.proyectos.find(x => x.proyecto === p);
+    return `<span class="chip"><i class="sw" style="background:${COLOR_GER[d?.gerencia]||"var(--mute)"}"></i>
+      <b>${d ? d.nombre : p}</b><button onclick="quitar('${p}')" title="quitar">×</button></span>`;
+  }).join("");
+  $$("#cuerpoTabla input[type=checkbox]").forEach(c => c.checked = SEL.includes(c.dataset.p));
+
+  if(!SEL.length){
+    $("#chartCmp").innerHTML = `<p class="vacio">Ningún proyecto seleccionado.
+      Escribe un número arriba, usa el botón, o haz clic en un nombre del gráfico anterior.</p>`;
+    return;
+  }
+  const datos = SEL.map(p => {
+    const s = SERIES.proyectos.find(x => x.proyecto === p);
+    const inf = INFORME.find(r => r.Proyecto === p);
+    return {...s, jun: inf?.MargenJunio, jul: inf?.MargenJulio,
+            varr: inf?.Variacion, ingJul: inf?.IngresoJulio, util: inf?.Utilidad};
+  }).filter(d => d.jun != null && d.jul != null);
+
+  if(!datos.length){
+    $("#chartCmp").innerHTML = `<p class="vacio">Los proyectos elegidos no tienen ingreso en
+      ambos meses, así que su margen no es comparable.</p>`;
+    return;
+  }
+  const W = 720, ML = 168, MR = 96, FILA = 32, MT = 10;
+  const H = MT + datos.length * FILA + 26;
+  const vals = datos.flatMap(d => [d.jun, d.jul]);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = (hi - lo) * 0.18 || 0.03;
+  const X = v => ML + (W-ML-MR) * (v - (lo-pad)) / ((hi+pad) - (lo-pad));
+
+  const svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img",
+    "aria-label":"Comparación de margen entre junio y julio para los proyectos elegidos"});
+  for(let i=0;i<=4;i++){
+    const v = (lo-pad) + ((hi+pad)-(lo-pad))*i/4, x = X(v);
+    svg.appendChild(el("line",{x1:x,x2:x,y1:MT,y2:H-26,class:"gl"}));
+    const t = el("text",{x, y:H-8, class:"eje","text-anchor":"middle"});
+    t.textContent = (v*100).toFixed(0)+"%"; svg.appendChild(t);
+  }
+  datos.forEach((d, i) => {
+    const y = MT + i*FILA + FILA/2;
+    const col = COLOR_GER[d.gerencia] || "var(--mute)";
+    const baja = d.jul < d.jun;
+    svg.appendChild(el("line", {x1:X(d.jun), x2:X(d.jul), y1:y, y2:y,
+      stroke:baja ? "var(--mal)" : "var(--bien)", "stroke-width":2.5, "stroke-linecap":"round"}));
+    // junio = anillo hueco, julio = punto lleno; la forma distingue, no solo el color
+    svg.appendChild(el("circle", {cx:X(d.jun), cy:y, r:5.5, fill:"var(--panel2)", stroke:col, "stroke-width":2}));
+    svg.appendChild(el("circle", {cx:X(d.jul), cy:y, r:7, fill:"var(--panel2)"}));
+    const pj = el("circle", {cx:X(d.jul), cy:y, r:5.5, fill:col});
+    conTip(pj, `<b>${d.nombre}</b> · ${d.gerencia}<br>
+      junio ${PCT(d.jun)} → julio <b>${PCT(d.jul)}</b> (${PP(d.varr)})<br>
+      ingreso julio ${CORTO(d.ingJul)} · utilidad ${CORTO(d.util)}`);
+    svg.appendChild(pj);
+
+    const nom = el("text", {x:ML-12, y:y+4, class:"eje", "text-anchor":"end", fill:"var(--texto)",
+      style:"font-size:11.5px"});
+    nom.textContent = `${d.nombre} · ${d.gerencia.split(" ")[0]}`;
+    svg.appendChild(nom);
+    const v = el("text", {x:W-MR+12, y:y+4, class:"eje",
+      fill: baja ? "var(--mal)" : "var(--bien)", style:"font-weight:600"});
+    v.textContent = (baja ? "🔴 " : "🟢 ") + PP(d.varr);
+    svg.appendChild(v);
+  });
+  const cap = el("text", {x:(ML+W-MR)/2, y:MT-2, class:"eje", "text-anchor":"middle"});
+  cap.textContent = "○ junio    ● julio";
+  svg.appendChild(cap);
+  $("#chartCmp").replaceChildren(svg);
+}
+
+/* ============ tabla detalle ============ */
+let ordenCol = "Variacion", ordenAsc = true;
+function pintarTabla(){
+  const g = $("#fGerencia").value, q = $("#fBuscar").value.trim().toLowerCase(), o = $("#fObs").value;
+  let filas = INFORME.filter(r =>
+    (!g || r.Gerencia === g) && (!o || r.Observacion === o) &&
+    (!q || String(r.Proyecto).includes(q) || (r.NombreCentroCosto||"").toLowerCase().includes(q)));
+  filas.sort((a,b) => {
+    const x = a[ordenCol], y = b[ordenCol];
+    if (x == null) return 1; if (y == null) return -1;
+    const c = typeof x === "string" ? x.localeCompare(y) : x - y;
+    return ordenAsc ? c : -c;
+  });
+  $("#conteo").textContent = `${filas.length} de ${INFORME.length}`;
+  $("#cuerpoTabla").innerHTML = filas.map(r => `<tr>
+    <td><input type="checkbox" data-p="${r.Proyecto}" ${SEL.includes(r.Proyecto)?"checked":""}></td>
+    <td>${r.Gerencia}</td><td>${r.NombreCentroCosto}</td>
+    <td>${PESOS(r.IngresoJunio)}</td><td>${PESOS(r.CostoJunio)}</td><td>${PCT(r.MargenJunio)}</td>
+    <td>${PESOS(r.IngresoJulio)}</td><td>${PESOS(r.CostoJulio)}</td><td>${PCT(r.MargenJulio)}</td>
+    <td style="color:${TINTA[r.Observacion]||"var(--tenue)"}">${PP(r.Variacion)}</td>
+    <td style="color:${r.VariacionIngreso>=0?"var(--bien)":"var(--mal)"}">${PESOS(r.VariacionIngreso)}</td>
+    <td>${PESOS(r.Utilidad)}</td>
+    <td><span class="obs">${ICONO[r.Observacion]||""} ${r.Observacion}</span></td></tr>`).join("");
+  $$("#cuerpoTabla input[type=checkbox]").forEach(c => c.onchange = () =>
+    c.checked ? agregar(c.dataset.p) : quitar(c.dataset.p));
+}
+
+/* ============ las 7 preguntas del caso ============ */
+function pintarRespuestas(d){
+  if(!d || !d.respuestas?.length){
+    $("#listaResp").innerHTML = `<div class="tarjeta"><p class="vacio">
+      Todavía no se han generado. Corre en la terminal:
+      <code>node web/responder.mjs</code></p></div>`;
+    return;
+  }
+  const n = d.respuestas.length;
+  const prom = d.costoTotalUSD / n;
+  const consultas = d.respuestas.reduce((a,r) => a + (r.consultas||0), 0);
+  $("#kpisResp").innerHTML = [
+    ["Preguntas respondidas", n, ""],
+    ["Costo total", "US$" + d.costoTotalUSD.toFixed(3), "las " + n + " respuestas"],
+    ["Costo por respuesta", "US$" + prom.toFixed(4), d.modelo],
+    ["Consultas ejecutadas", consultas, "código real sobre los datos"],
+  ].map(([et,val,sub]) => `<div class="kpi"><div class="et">${et}</div>
+    <div class="val">${val}</div>${sub?`<div class="del">${sub}</div>`:""}</div>`).join("");
+
+  $("#listaResp").innerHTML = d.respuestas.map(r => {
+    const pasos = (r.pasos||[]).map((p,i) => `<details>
+        <summary><span class="num">${i+1}</span> código ejecutado${p.ok===false?' <span class="fallo">· error</span>':''}</summary>
+        <pre>${esc(p.codigo||"")}</pre>
+        <pre style="color:var(--tenue)">${esc(p.salida||"")}</pre></details>`).join("");
+    return `<div class="qa">
+      <div class="preg"><span class="idx">${r.n}</span><h3>${esc(r.pregunta)}</h3></div>
+      <div class="resp">${r.error ? `<p class="fallo">⚠ ${esc(r.error)}</p>` : md(r.respuesta||"")}</div>
+      ${r.aviso ? `<div class="pie"><span class="avisoAmar">⚠ ${esc(r.aviso)}</span></div>` : ""}
+      <div class="pie">
+        <span>costo <b>US$${(r.costoUSD||0).toFixed(4)}</b></span>
+        <span>${r.consultas||0} consulta(s)</span>
+        <span>${r.segundos||0} s</span>
+        <span>${r.modelo||""}</span>
+      </div>${pasos}</div>`;
+  }).join("");
+}
+
+/* ============ navegación ============ */
+const TITULOS = {
+  dash: ["Rentabilidad por proyecto", "Junio vs julio 2026"],
+  resp: ["Las 7 preguntas del caso", "Respondidas por el agente sobre los datos reales"],
+  det:  ["Detalle por proyecto", "La tabla completa del Caso Financiero · clic en un encabezado para ordenar"],
+};
+function irA(v){
+  $$(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.vista === v));
+  $$(".vista").forEach(s => s.dataset.vista === v ? s.setAttribute("data-activa","") : s.removeAttribute("data-activa"));
+  const [t, s] = TITULOS[v] || TITULOS.dash;
+  $("#tituloVista").textContent = t;
+  $("#subVista").textContent = s;
+}
+$$(".tab").forEach(t => t.onclick = () => irA(t.dataset.vista));
+
+/* ============ carga ============ */
+Promise.all([
+  fetch("/api/informe").then(r => r.json()),
+  fetch("/api/series").then(r => r.json()),
+]).then(([inf, ser]) => {
+  INFORME = inf; SERIES = ser;
+  pintarKpis(); pintarGerencias(); pintarVariacion(); pintarCmp();
+
+  const gers = [...new Set(inf.map(r => r.Gerencia))].sort();
+  gers.forEach(g => {
+    for (const sel of ["#fGerencia", "#selGer"]){
+      const o = document.createElement("option"); o.value = o.textContent = g;
+      $(sel).appendChild(o);
+    }
+  });
+  $("#listaProy").innerHTML = SERIES.proyectos
+    .map(p => `<option value="${p.proyecto}">${p.nombre} · ${p.gerencia}</option>`).join("");
+  pintarTabla();
+});
+
+// Las respuestas se generan aparte (node web/responder.mjs); si aún no existen,
+// la pestaña lo dice en vez de quedarse en blanco.
+fetch("/api/respuestas")
+  .then(r => r.ok ? r.json() : null)
+  .then(pintarRespuestas)
+  .catch(() => pintarRespuestas(null));
+
+$("#fGerencia").oninput = $("#fBuscar").oninput = $("#fObs").oninput = pintarTabla;
+$$("table.det th[data-orden]").forEach(th => th.onclick = () => {
+  const c = th.dataset.orden;
+  ordenAsc = ordenCol === c ? !ordenAsc : true; ordenCol = c; pintarTabla();
+});
+$("#selGer").onchange = () => {
+  const g = $("#selGer").value;
+  const ps = g ? SERIES.proyectos.filter(p => p.gerencia === g) : SERIES.proyectos;
+  $("#listaProy").innerHTML = ps.map(p => `<option value="${p.proyecto}">${p.nombre} · ${p.gerencia}</option>`).join("");
+};
+$("#selBuscar").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  const v = e.target.value.trim();
+  if (SERIES.proyectos.some(p => p.proyecto === v)) { agregar(v); e.target.value = ""; }
+});
+$("#btnTop").onclick = () => {
+  const PISO = 3e8;
+  SEL = INFORME.filter(r => r.Variacion != null && r.IngresoJunio > PISO && r.IngresoJulio > PISO)
+    .sort((a,b) => a.Variacion - b.Variacion).slice(0,5).map(r => r.Proyecto);
+  pintarCmp(); pintarTabla();
+};
+window.quitar = quitar;
+
+/* ============ chat ============ */
+const chat = $("#chat"), entrada = $("#entrada"), enviar = $("#enviar");
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function enl(s){
+  return s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+          .replace(/`(.+?)`/g,"<code>$1</code>")
+          .replace(/(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?![*\w])/g,"<em>$1</em>");
+}
+function md(t){
+  return esc(t).split(/\n{2,}/).map(b => {
+    b = b.trim(); if(!b) return "";
+    if(/^\|.+\|/m.test(b) && b.split("\n").length > 1){
+      const fs = b.split("\n").filter(l => l.trim().startsWith("|"));
+      const cel = l => l.replace(/^\||\|$/g,"").split("|").map(c => c.trim());
+      if(fs.length >= 2 && /^[\s|:-]+$/.test(fs[1]))
+        return `<table><thead><tr>${cel(fs[0]).map(c=>`<th>${enl(c)}</th>`).join("")}</tr></thead>
+          <tbody>${fs.slice(2).map(f=>`<tr>${cel(f).map(c=>`<td>${enl(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    }
+    if(/^#{1,4}\s/.test(b)) return `<h3>${enl(b.replace(/^#+\s/,""))}</h3>`;
+    if(/^[-*]\s/m.test(b)) return `<ul>${b.split("\n").map(l=>`<li>${enl(l.replace(/^[-*]\s*/,""))}</li>`).join("")}</ul>`;
+    if(/^\d+[.)]\s/m.test(b)) return `<ol>${b.split("\n").map(l=>`<li>${enl(l.replace(/^\d+[.)]\s*/,""))}</li>`).join("")}</ol>`;
+    return `<p>${enl(b).replace(/\n/g,"<br>")}</p>`;
+  }).join("");
+}
+function burbuja(quien, clase=""){
+  const d = document.createElement("div");
+  d.className = "msg " + clase;
+  d.innerHTML = `<div class="quien">${quien}</div><div class="cuerpo"></div>`;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+  return d.querySelector(".cuerpo");
+}
+const abajo = () => chat.scrollTop = chat.scrollHeight;
+
+async function preguntar(texto){
+  burbuja("Tú","yo").textContent = texto;
+  const cuerpo = burbuja("Analista");
+  const cargando = document.createElement("div");
+  cargando.className = "pensando puntos"; cargando.textContent = "Consultando los datos";
+  cuerpo.appendChild(cargando); abajo();
+
+  let paso = 0, actual = null, buffer = "";
+  const resp = await fetch("/api/preguntar", {method:"POST",
+    headers:{"content-type":"application/json"}, body:JSON.stringify({pregunta:texto})});
+  const lector = resp.body.getReader(), dec = new TextDecoder();
+  while(true){
+    const {done, value} = await lector.read(); if(done) break;
+    buffer += dec.decode(value, {stream:true});
+    const partes = buffer.split("\n\n"); buffer = partes.pop();
+    for(const p of partes){
+      if(!p.startsWith("data: ")) continue;
+      const ev = JSON.parse(p.slice(6));
+      if(ev.evento === "cache")
+        $("#pill").textContent = ev.estado === "reutilizada"
+          ? `caché · ${ev.leidos.toLocaleString("es-CO")} tok a 0,1x`
+          : `caché creada · ${ev.escritos.toLocaleString("es-CO")} tok`;
+      if(ev.evento === "pensando"){
+        const d = document.createElement("div");
+        d.className = "pensando"; d.textContent = ev.texto;
+        cuerpo.insertBefore(d, cargando); abajo();
+      }
+      if(ev.evento === "aviso"){
+        cargando.textContent = "Cerrando el análisis";
+        const d = document.createElement("div");
+        d.className = "pensando"; d.style.color = "var(--ojo)";
+        d.textContent = "⚠ " + ev.texto;
+        cuerpo.insertBefore(d, cargando); abajo();
+      }
+      if(ev.evento === "codigo"){
+        paso++; cargando.textContent = `Ejecutando consulta ${paso}`;
+        actual = document.createElement("details"); actual.className = "paso";
+        actual.innerHTML = `<summary><span class="num">${paso}</span> código ejecutado</summary><pre>${esc(ev.codigo)}</pre>`;
+        cuerpo.insertBefore(actual, cargando); abajo();
+      }
+      if(ev.evento === "salida" && actual){
+        const pre = document.createElement("pre"); pre.textContent = ev.salida;
+        if(!ev.ok){ pre.classList.add("fallo"); actual.open = true;
+          actual.querySelector("summary").innerHTML += ' <span class="fallo">· error, reintentando</span>'; }
+        actual.appendChild(pre); abajo();
+      }
+      if(ev.evento === "respuesta"){
+        cargando.remove();
+        const d = document.createElement("div"); d.innerHTML = md(ev.texto);
+        cuerpo.appendChild(d); abajo();
+      }
+      if(ev.evento === "error"){
+        cargando.remove();
+        const d = document.createElement("div"); d.className = "fallo";
+        d.textContent = "⚠ " + ev.mensaje; cuerpo.appendChild(d); abajo();
+      }
+      if(ev.evento === "fin"){
+        cargando.remove();
+        if(ev.costoUSD > 0){
+          const m = document.createElement("div"); m.className = "meta";
+          m.innerHTML = `<span>costo <b>US$${ev.costoUSD.toFixed(4)}</b></span>
+            <span>${ev.turnos} turno(s)</span>
+            <span>caché leída ${(ev.uso?.lecturaCache||0).toLocaleString("es-CO")} tok</span>
+            <span>${ev.modelo}</span>`;
+          cuerpo.appendChild(m); abajo();
+        }
+      }
+    }
+  }
+}
+$("#form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const t = entrada.value.trim(); if(!t) return;
+  entrada.value = ""; entrada.style.height = "auto"; enviar.disabled = true;
+  try{ await preguntar(t); }
+  catch(err){ burbuja("Analista").innerHTML = `<div class="fallo">⚠ ${err.message}</div>`; }
+  enviar.disabled = false; entrada.focus();
+});
+entrada.addEventListener("input", () => {
+  entrada.style.height = "auto";
+  entrada.style.height = Math.min(entrada.scrollHeight, 120) + "px";
+});
+entrada.addEventListener("keydown", e => {
+  if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("#form").requestSubmit(); }
+});
+[
+  "¿Qué línea en los tres meses ha tenido la mejor evolución en rentabilidad y a qué se debe?",
+  "Para mejorar la rentabilidad de Warehouse, ¿qué debemos hacer?",
+  "¿Warehouse va a recuperar su rentabilidad en agosto?",
+  "¿Cuál fue la facturación real de cada mes?",
+  "¿Qué parte del gasto de un mes es realmente de ese mes y qué parte es un ajuste retroactivo?",
+  "Indícame las novedades del proyecto 594 que expliquen la variación entre junio y julio",
+  "Indícame las novedades del proyecto 600 que expliquen la variación entre junio y julio",
+].forEach(s => {
+  const b = document.createElement("span");
+  b.className = "sug"; b.textContent = s.length > 54 ? s.slice(0,52)+"…" : s; b.title = s;
+  b.onclick = () => { entrada.value = s; entrada.focus(); entrada.dispatchEvent(new Event("input")); };
+  $("#sugerencias").appendChild(b);
+});
+</script>
+</body>
+</html>

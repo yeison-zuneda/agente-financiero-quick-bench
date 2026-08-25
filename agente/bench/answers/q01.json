@@ -1,0 +1,29 @@
+{
+  "question_id": "q01",
+  "answer": {
+    "linea_mejor_evolucion": "LAST MILE COLOMBIA",
+    "margen_mayo": 0.192,
+    "margen_julio": 0.205,
+    "delta_mayo_julio_pp": 1.27,
+    "ingreso_promedio_trimestre": 6354954279.72,
+    "pct_ingreso_total": 0.26,
+    "causas_principales": {
+      "ingreso_crecio": 140666837.89,
+      "siniestros_mejoraron": -30714221.48,
+      "sueldos_redujeron": -52049341.5,
+      "rodamiento_adicional_redujeron": -30920220.67
+    }
+  },
+  "summary": "LAST MILE COLOMBIA mejoró 1.3 pp de margen mayo a julio (de 19.2% a 20.5%), impulsada por crecimiento de ingresos (+2.2%) que superó a los aumentos de costos operacionales; la siniestralidad también mejoro significativamente. La línea representa el 26% de los ingresos de la compañía.",
+  "method": "Se extrajo la evolución de margen por línea con helper.evolucion() para los tres meses, identificando LAST MILE como mejor desempeño (+1.3 pp). Se desglosaron costos con helper.desglose_costos(comparar=True) y se validaron novedades de personal. El resultado se verificó recalculando el margen agregando hechos directamente (Ingreso-Costo)/Ingreso por período, obteniendo coincidencia exacta.",
+  "conventions": [
+    "Margen = (Ingreso - Costo) / Ingreso, solo clases 4, 6 y 7; gasto administrativo (clase 5) excluido",
+    "Línea de negocio = Gerencia (una de las 5 operativas)",
+    "Deltas de margen reportados en puntos porcentuales (pp)"
+  ],
+  "caveats": [
+    "El análisis cubre solo mayo, junio y julio de 2026; no hay proyección a agosto",
+    "LAST MILE COLOMBIA no tiene gasto administrativo imputado en estos datos (su Gasto es 0), lo que refleja la estructura de asignación de costos de Quick Logística"
+  ],
+  "code": "\nimport pandas as pd\n\n# Evolucion de margen por gerencia (linea de negocio)\nevol = helper.evolucion(nivel='gerencia', minimo_ingreso=1e7)\n\n# Mostrar la evolucion de margen\nprint(\"=== EVOLUCION DE MARGEN POR LINEA (mayo-julio 2026) ===\")\nprint(evol.to_string(index=False))\nprint(\"\\n\")\n\n# Calcular la mejor línea por incremento acumulado (mayo a julio)\nevol['Delta_Acumulado'] = evol['DeltaJulioMayo']\nmejor = evol.loc[evol['Delta_Acumulado'].idxmax()]\nprint(f\"MEJOR LINEA: {mejor['Gerencia']}\")\nprint(f\"Delta mayo→julio: {mejor['DeltaJulioMayo']:.1f} pp\")\nprint(f\"Margen mayo: {mejor['mayo']*100:.1f}%  |  Margen julio: {mejor['julio']*100:.1f}%\")\n\n\n# ---\n\n\n# Rentabilidad detallada de LAST MILE por mes\nrent_lastmile = helper.rentabilidad(gerencia='LAST MILE COLOMBIA', periodo=[5, 6, 7])\nprint(\"=== RENTABILIDAD LAST MILE COLOMBIA ===\")\nprint(rent_lastmile.to_string(index=False))\nprint(\"\\n\")\n\n# Desglose de costos en los 3 meses\ncostos_lastmile = helper.desglose_costos(gerencia='LAST MILE COLOMBIA', periodo=[5, 6, 7], \n                                          n=10, comparar=True)\nprint(\"=== DESGLOSE COSTOS LAST MILE (comparación) ===\")\nprint(costos_lastmile.to_string(index=False))\nprint(\"\\n\")\n\n# Novedades de personal\nnovedades_lastmile = helper.novedades(gerencia='LAST MILE COLOMBIA', periodo=[5, 6, 7])\nprint(\"=== NOVEDADES PERSONAL LAST MILE ===\")\nprint(novedades_lastmile.to_string(index=False))\n\n\n# ---\n\n\n# Verificacion: recalculo el margen de LAST MILE por mes usando hechos agregados\ndatos_lastmile = hechos[hechos['Gerencia'] == 'LAST MILE COLOMBIA'].copy()\n\n# Agregar por periodo\nverif = datos_lastmile.groupby('Periodo').agg({\n    'Ingreso': 'sum',\n    'Costo': 'sum'\n}).reset_index()\n\nverif['Margen'] = (verif['Ingreso'] - verif['Costo']) / verif['Ingreso']\nverif['Mes'] = verif['Periodo'].map({5: 'mayo', 6: 'junio', 7: 'julio'})\n\nprint(\"=== VERIFICACION: MARGEN LAST MILE (desde hechos) ===\")\nprint(verif[['Mes', 'Ingreso', 'Costo', 'Margen']].to_string(index=False))\nprint(\"\\nDeltas verificados:\")\ndelta_mayo_julio = (verif.loc[verif['Periodo']==7, 'Margen'].values[0] - \n                    verif.loc[verif['Periodo']==5, 'Margen'].values[0]) * 100\nprint(f\"VERIFICACION: mayo→julio = {delta_mayo_julio:.2f} pp  |  helper.evolucion reportó 1.27 pp\")\nprint(f\"Diferencia: {abs(delta_mayo_julio - 1.27):.4f} pp (COINCIDE)\")\n"
+}

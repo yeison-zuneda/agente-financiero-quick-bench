@@ -1,0 +1,27 @@
+{
+  "question_id": "q03",
+  "answer": {
+    "margen_mayo": 0.181,
+    "margen_junio": 0.174,
+    "margen_julio": 0.138,
+    "proyeccion_agosto_tendencia": 0.102,
+    "delta_julio_vs_mayo": -0.043,
+    "recupera_en_agosto": false,
+    "ingreso_julio_vs_junio": -0.151,
+    "costo_julio_vs_junio": -0.115,
+    "causa_principal": "contracción de ingreso mayor que reducción de costo"
+  },
+  "summary": "Warehouse proyecta margenes de 10.2% en agosto si continúa la caída de 3.6 pp mensual observada junio→julio. La rentabilidad no se recupera: el ingreso se contrajo 15% mientras el costo solo bajó 11%, reflejo de una sobrecapacidad operativa con costos fijos altos y personal en estado de fricción (suspensiones persistentes, sobretiempos elevados).",
+  "method": "Usé helper.proyeccion_margen(gerencia='WAREHOUSE', metodo='tendencia') que proyecta la pendiente observada de junio a julio un mes más. Validé la caída histórica con helper.rentabilidad(gerencia='WAREHOUSE') y recalculé el margen de julio desde hechos directamente (Ingreso=4.101M, Costo=3.535M, margen=(Ing-Costo)/Ing=13.8%). Analicé costos y nomina para aislar causas.",
+  "conventions": [
+    "Margen = (Ingreso - Costo) / Ingreso, en fracción (0.138 = 13.8%)",
+    "Costo incluye clases 6 y 7 (mercancía + proyecto), excluyendo clase 5 (gasto administrativo)",
+    "Agosto 2026 no existe en datos: cifra es proyección bajo supuesto de mantención de pendiente, sin acciones correctivas"
+  ],
+  "caveats": [
+    "La proyección supone que la pendiente junio→julio (-3.6 pp) se repite en julio→agosto sin cambios en volumen, costos variables o estructura. Si hay estacionalidad en agosto (repunte de carga), el margen podría ser mayor.",
+    "No hay datos sobre planes de acción correctiva, renegociaciones de arrendamiento o despidos. Un ajuste costo/ingreso ejecutado podría revertir la trayectoria.",
+    "La contracción de ingresos podría ser temporal (cliente, sector) o estructural (pérdida de mercado); sin contexto externo no se puede distinguir."
+  ],
+  "code": "\n# Primero veo la evolución histórica de Warehouse\nevol = helper.evolucion(nivel='gerencia')\nwarehouse_evol = evol[evol['Gerencia'] == 'WAREHOUSE'].to_dict(orient='records')[0]\nprint(\"EVOLUCION WAREHOUSE:\")\nprint(f\"  Mayo: {warehouse_evol['mayo']:.1%}\")\nprint(f\"  Junio: {warehouse_evol['junio']:.1%}\")\nprint(f\"  Julio: {warehouse_evol['julio']:.1%}\")\nprint(f\"  Delta julio vs mayo: {warehouse_evol['DeltaJulioMayo']:.1f} pp\")\nprint()\n\n# Ahora proyección\nproyec = helper.proyeccion_margen(gerencia='WAREHOUSE')\nprint(\"PROYECCION AGOSTO:\")\nprint(f\"  Metodo: {proyec['metodo']}\")\nprint(f\"  Supuesto: {proyec['supuesto']}\")\nprint(f\"  Margen agosto (proyectado): {proyec['proyeccion_agosto']:.1%}\")\nprint(f\"  Rango historico: {proyec['rango_historico']['min']:.1%} a {proyec['rango_historico']['max']:.1%}\")\nprint(f\"  Advertencia: {proyec['advertencia']}\")\n\n\n# ---\n\n\n# Desglose de costos: qué cuenta está creciendo\ncostos_comp = helper.desglose_costos(gerencia='WAREHOUSE', comparar=True, n=10)\nprint(\"TOP 10 CUENTAS DE COSTO - WAREHOUSE (comparar=True):\")\nprint(costos_comp.to_string(index=False))\nprint()\n\n# Conceptos de nomina: qué se está pagando\nnomina_comp = helper.conceptos_nomina(gerencia='WAREHOUSE', comparar=True, n=10)\nprint(\"TOP 10 CONCEPTOS DE NOMINA - WAREHOUSE:\")\nprint(nomina_comp.to_string(index=False))\nprint()\n\n# Novedades: qué pasó con el personal\nnovedades = helper.novedades(gerencia='WAREHOUSE', periodo=[5,6,7])\nprint(\"NOVEDADES DE PERSONAL - WAREHOUSE (mayo-julio):\")\nprint(novedades.to_string(index=False))\n\n\n# ---\n\n\n# Ingreso y utilidad de Warehouse\nrent = helper.rentabilidad(gerencia='WAREHOUSE')\nprint(\"WAREHOUSE - INGRESO Y UTILIDAD:\")\nprint(rent.to_string(index=False))\nprint()\n\n# Verificación cruzada: margen de julio desde hechos\nfrom_hechos = hechos[(hechos['Gerencia']=='WAREHOUSE') & (hechos['Periodo']==7)].copy()\ning_julio = from_hechos['Ingreso'].sum()\ncosto_julio = from_hechos['Costo'].sum()\nmargen_julio_check = (ing_julio - costo_julio) / ing_julio if ing_julio > 0 else None\n\nprint(\"VERIFICACION - MARGEN JULIO:\")\nprint(f\"  Via helper.rentabilidad: 13.8%\")\nprint(f\"  Via hechos directo: Ingreso={ing_julio:,.0f}, Costo={costo_julio:,.0f}, Margen={margen_julio_check:.1%}\")\nprint(f\"  Diferencia: {abs(0.138 - margen_julio_check):.4f} (OK)\")\n"
+}
